@@ -1,0 +1,97 @@
+swagger: "2.0"
+info:
+  title: "Romance Scam Detection API"
+  version: "1.0.0"
+  description: "AI-powered romance scam detection service"
+
+host: "scam-detector-api-xxxxx.run.app"
+schemes:
+  - "https"
+
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "X-API-Key"
+    in: "header"
+
+paths:
+  /api/v1/analyze:
+    post:
+      summary: "Analyze conversation for romance scam indicators"
+      operationId: "analyzeConversation"
+      security:
+        - api_key: []
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/AnalyzeRequest"
+      responses:
+        200:
+          description: "Analysis completed"
+          schema:
+            $ref: "#/definitions/AnalysisResponse"
+        400:
+          description: "Invalid request"
+        429:
+          description: "Rate limit exceeded"
+        500:
+          description: "Internal server error"
+      x-google-quota:
+        metricCosts:
+          "analyze-requests": 1
+      x-google-backend:
+        address: "https://scam-detector-api-xxxxx.run.app"
+        deadline: 30.0
+
+definitions:
+  AnalyzeRequest:
+    type: "object"
+    required:
+      - "conversation_id"
+      - "messages"
+    properties:
+      conversation_id:
+        type: "string"
+      messages:
+        type: "array"
+        items:
+          $ref: "#/definitions/Message"
+      options:
+        $ref: "#/definitions/AnalysisOptions"
+  AnalysisResponse:
+    type: "object"
+  Message:
+    type: "object"
+    required:
+      - "message_id"
+      - "sender"
+      - "content"
+      - "timestamp"
+    properties:
+      message_id:
+        type: "string"
+      sender:
+        type: "string"
+        enum: ["user", "contact"]
+      content:
+        type: "string"
+      timestamp:
+        type: "string"
+        format: "date-time"
+  AnalysisOptions:
+    type: "object"
+    properties:
+      mode:
+        type: "string"
+        enum: ["realtime", "detailed"]
+      language:
+        type: "string"
+      mask_pii:
+        type: "boolean"
+

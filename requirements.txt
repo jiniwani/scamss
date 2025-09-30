@@ -1,0 +1,41 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+gunicorn==21.2.0
+
+# AI/ML
+google-generativeai==0.3.1
+langdetect==1.0.9
+langid==1.1.6
+
+# Data Processing
+pandas==2.1.3
+numpy==1.26.2
+
+# Translation
+google-cloud-translate==3.12.1
+
+# Storage & Database
+google-cloud-storage==2.10.0
+google-cloud-firestore==2.13.1
+google-cloud-bigquery==3.13.0
+
+# Utilities
+pydantic==2.5.0
+python-dotenv==1.0.0
+tenacity==8.2.3
+httpx==0.25.1
+
+# Monitoring
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-instrumentation-fastapi==0.42b0
+
+# Security
+cryptography==41.0.7
+pyjwt==2.8.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
