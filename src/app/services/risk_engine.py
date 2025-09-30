@@ -29,6 +29,26 @@ RED_FLAG_PATTERNS = {
             ],
             'weight': 0.35
         },
+        'guaranteed_profit_daily': {
+            'keywords': ['guaranteed', 'profit daily', '12% profit', 'guaranteed profit'],
+            'weight': 0.35
+        },
+        'minimum_deposit': {
+            'regex': r'start\s+with\s*\$?\d+',
+            'weight': 0.25
+        },
+        'registration_fee': {
+            'keywords': ['registration fee', 'sign-up fee', 'signup fee'],
+            'weight': 0.35
+        },
+        'activation_fee': {
+            'keywords': ['activation fee', 'activate your account'],
+            'weight': 0.3
+        },
+        'earn_per_day': {
+            'regex': r'earn\s*\$?\d+\s*/\s*day',
+            'weight': 0.3
+        },
         'fees_documents': {
             'keywords': ['customs fee', 'visa fee', 'lawyer fee', 'processing fee', 'clearance', '수수료', '비용', '관세', '서류비'],
             'weight': 0.35
@@ -73,6 +93,10 @@ RED_FLAG_PATTERNS = {
             'keywords': ['surgeon', 'un doctor', 'civil engineer abroad', 'contractor'],
             'weight': 0.15
         },
+        'document_request': {
+            'keywords': ['passport', 'id copy', 'account verification', 'verification copy'],
+            'weight': 0.25
+        },
         'inconsistent_details': {
             'detection': 'contradiction_analysis',
             'weight': 0.3
@@ -84,7 +108,7 @@ RED_FLAG_PATTERNS = {
             'weight': 0.25
         },
         'time_pressure': {
-            'keywords': ['urgent', 'today', 'right now', 'deadline', 'expire', '긴급', '지금', '오늘', '바로', '급히'],
+            'keywords': ['urgent', 'today', 'right now', 'deadline', 'expire', 'within 1 hour', 'one hour', 'limited time', 'spot will be given', '긴급', '지금', '오늘', '바로', '급히'],
             'weight': 0.2
         },
         'small_test_request': {
@@ -164,6 +188,19 @@ def determine_risk_tier(score: float, red_flags_list: List[Dict]) -> Dict:
             base_tier = 'medium'
         elif base_tier == 'medium':
             base_tier = 'high'
+
+    # Escalate when multiple distinct categories present
+    categories = {f.get('category') for f in red_flags_list}
+    if len(categories) >= 3 and score >= 0.45:
+        base_tier = 'high'
+
+    # Strong combo rule: upfront fee + time pressure => at least medium
+    if (types & {'registration_fee', 'activation_fee', 'minimum_deposit'}) and ('time_pressure' in types):
+        if base_tier == 'low':
+            base_tier = 'medium'
+    # Very strong combo: guaranteed/earn per day + upfront fee + document request => high
+    if (types & {'guaranteed_profit_daily', 'earn_per_day'}) and (types & {'registration_fee', 'activation_fee', 'minimum_deposit'}) and ('document_request' in types):
+        base_tier = 'high'
 
     return {
         'tier': base_tier,
