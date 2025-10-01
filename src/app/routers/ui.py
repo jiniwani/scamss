@@ -175,7 +175,7 @@ def home():
     let lastInputText = '';
     let reanalyzeTimer = null;
     
-    // Auto re-analysis on text change
+    // Auto re-analysis on text change (only when text is ADDED to existing conversation)
     document.getElementById('txt').addEventListener('input', () => {
       const text = document.getElementById('txt').value.trim();
       const autoEnabled = document.getElementById('auto-reanalyze').checked;
@@ -184,12 +184,13 @@ def home():
       btn.textContent = '분석 시작';
       btn.style.opacity = '1';
       
-      if (autoEnabled && text && text !== lastInputText && lastInputText) {
-        btn.textContent = '변경 감지...';
+      // Only trigger if: auto ON, text exists, has previous text, AND current text contains previous text (addition)
+      if (autoEnabled && text && lastInputText && text.includes(lastInputText) && text !== lastInputText) {
+        btn.textContent = '추가 감지...';
         btn.style.opacity = '0.8';
         
         reanalyzeTimer = setTimeout(() => {
-          btn.click(); // Auto-click without confirm
+          btn.click(); // Auto-click for re-analysis
           btn.textContent = '분석 시작';
           btn.style.opacity = '1';
         }, 2000);
