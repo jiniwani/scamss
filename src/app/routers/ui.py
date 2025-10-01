@@ -152,7 +152,7 @@ def home():
       
       <div id=reply-template style="display:none; margin-top:16px; padding:16px; background:rgba(24,160,88,.08); border:1px solid rgba(24,160,88,.2); border-radius:10px">
         <h4 style="margin:0 0 10px 0; font-size:16px; color:#73d49b">💬 안전한 응답 예시</h4>
-        <div id=reply-text style="padding:12px; background:#0f1730; border-radius:8px; font-size:14px"></div>
+        <div id=reply-text style="padding:12px; background:var(--bg); border:1px solid var(--outline); border-radius:8px; font-size:14px; color:var(--fg)"></div>
         <button onclick="copyReply()" style="margin-top:10px; padding:8px 16px; background:var(--ok); border:none; color:white; border-radius:6px; cursor:pointer">복사하기</button>
       </div>
       
@@ -264,9 +264,9 @@ def home():
           evidenceList.innerHTML = data.evidence_spans.map(ev => {
             const flagKo = data.red_flags.find(f => f.type === ev.flag_type)?.type_ko || ev.flag_type;
             return `
-            <div style="padding:10px; background:#0f1730; border-left:3px solid var(--${cls === 'high' ? 'danger' : (cls === 'medium' ? 'warn' : 'brand')}); border-radius:6px">
+            <div style="padding:10px; background:var(--bg); border-left:3px solid var(--${cls === 'high' ? 'danger' : (cls === 'medium' ? 'warn' : 'brand')}); border-radius:6px">
               <div style="font-size:12px; color:var(--muted); margin-bottom:4px">턴 ${ev.turn} (${ev.sender}) - ${flagKo}</div>
-              <div style="font-size:14px">${ev.text}</div>
+              <div style="font-size:14px; color:var(--fg)">${ev.text}</div>
             </div>
           `}).join('');
           evidenceDiv.style.display = 'block';
