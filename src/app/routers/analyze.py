@@ -7,6 +7,7 @@ import os
 from ..services.preprocess import preprocess_text
 from ..services.risk_engine import detect_red_flags, calculate_risk_score, determine_risk_tier
 from ..services.gemini_client import analyze_with_gemini
+from ..services.context_analyzer import analyze_conversation_context, calculate_context_risk_boost
 from ..utils.pii import mask_pii
 
 router = APIRouter()
@@ -89,6 +90,10 @@ def analyze(body: AnalyzeRequest):
     } for m in body.messages]
 
     detected = detect_red_flags(msgs)
+    
+    # Analyze conversation flow and temporal patterns
+    context_analysis = analyze_conversation_context(body.messages)
+    context_boost = calculate_context_risk_boost(context_analysis)
 
     conversation_context = {
         'message_count': len(msgs),
@@ -96,7 +101,10 @@ def analyze(body: AnalyzeRequest):
             flags.get('count', 0) for flag, flags in detected.get('financial', {}).items()
         ),
     }
-    score = calculate_risk_score(detected, conversation_context)
+    base_score = calculate_risk_score(detected, conversation_context)
+    
+    # Apply context-based boost
+    score = min(1.0, base_score + context_boost)
 
     # Build red_flags list
     red_flags_list = []
