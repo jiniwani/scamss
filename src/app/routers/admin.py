@@ -50,7 +50,15 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
 </head>
 <body>
   <div class="container">
-    <h1>📊 Verio 관리자 대시보드</h1>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+      <h1 style="margin:0">📊 Verio 관리자 대시보드</h1>
+      <div style="display:flex; gap:8px">
+        <button onclick="filterByPeriod('today')" id="btn-today" style="padding:8px 16px; background:var(--brand); border:none; color:white; border-radius:6px; cursor:pointer">오늘</button>
+        <button onclick="filterByPeriod('week')" id="btn-week" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 주</button>
+        <button onclick="filterByPeriod('month')" id="btn-month" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 달</button>
+        <button onclick="filterByPeriod('all')" id="btn-all" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">전체</button>
+      </div>
+    </div>
     
     <div class="stats-grid">
       <div class="stat-card">
@@ -122,14 +130,70 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       }
     }
     
+    let currentPeriod = 'all';
+    let allFeedbackData = null;
+    
+    function filterByPeriod(period) {
+      currentPeriod = period;
+      // Update button styles
+      ['today', 'week', 'month', 'all'].forEach(p => {
+        const btn = document.getElementById('btn-' + p);
+        if (p === period) {
+          btn.style.background = 'var(--brand)';
+          btn.style.border = 'none';
+        } else {
+          btn.style.background = '#1a2442';
+          btn.style.border = '1px solid var(--outline)';
+        }
+      });
+      loadData();
+    }
+    
+    function filterDataByPeriod(feedbacks, period) {
+      if (period === 'all') return feedbacks;
+      
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      return feedbacks.filter(fb => {
+        const fbDate = new Date(fb.timestamp);
+        
+        if (period === 'today') {
+          return fbDate >= today;
+        } else if (period === 'week') {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return fbDate >= weekAgo;
+        } else if (period === 'month') {
+          const monthAgo = new Date(today);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          return fbDate >= monthAgo;
+        }
+        return true;
+      });
+    }
+    
     async function loadData() {
       const r = await fetch('/api/v1/feedback/stats');
       const data = await r.json();
+      allFeedbackData = data;
       
-      document.getElementById('total').textContent = data.total || 0;
-      document.getElementById('low-count').textContent = data.low_rating_count || 0;
+      // Filter data by period
+      const filteredCases = filterDataByPeriod(data.low_rating_cases || [], currentPeriod);
       
-      const byRating = data.by_rating || {};
+      // Recalculate stats for filtered period
+      const filteredTotal = filteredCases.length;
+      const filteredLowCount = filteredCases.filter(c => c.rating <= 2).length;
+      
+      document.getElementById('total').textContent = filteredTotal;
+      document.getElementById('low-count').textContent = filteredLowCount;
+      
+      // Calculate rating distribution for filtered data
+      const byRating = {1:0, 2:0, 3:0, 4:0, 5:0};
+      filteredCases.forEach(c => {
+        if (c.rating >= 1 && c.rating <= 5) byRating[c.rating]++;
+      });
+      
       const totalRatings = Object.values(byRating).reduce((a,b)=>a+b, 0);
       const avgRating = totalRatings > 0 
         ? (Object.entries(byRating).reduce((sum,[r,c])=>sum + parseInt(r)*c, 0) / totalRatings).toFixed(1)
@@ -152,8 +216,8 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       }).join('');
       document.getElementById('rating-bars').innerHTML = bars;
       
-      // Low rating cases table
-      const cases = data.low_rating_cases || [];
+      // Low rating cases table (filter <= 2 stars)
+      const cases = filteredCases.filter(c => c.rating <= 2);
       const rows = cases.map(c => `<tr>
         <td>${new Date(c.timestamp).toLocaleString('ko-KR')}</td>
         <td><span class="badge rating-${c.rating}">⭐${c.rating}</span></td>
