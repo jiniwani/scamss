@@ -85,17 +85,27 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       <table id="cases-table">
         <thead>
           <tr>
-            <th>시간</th>
-            <th>별점</th>
-            <th>예측</th>
-            <th>실제</th>
-            <th>대화 미리보기</th>
-            <th>의견</th>
+            <th style="width:140px">시간</th>
+            <th style="width:60px">별점</th>
+            <th style="width:60px">예측</th>
+            <th style="width:300px">대화 미리보기</th>
+            <th style="width:150px">의견</th>
+            <th style="width:240px">액션</th>
           </tr>
         </thead>
         <tbody id="cases-body">
         </tbody>
       </table>
+    </div>
+    
+    <div class="card" id="detail-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); max-width:800px; max-height:80vh; overflow-y:auto; z-index:1000; box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h3 style="margin:0">대화 전문</h3>
+        <button onclick="closeDetail()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer">&times;</button>
+      </div>
+      <div id="detail-conversation" style="background:#0f1730; padding:16px; border-radius:8px; white-space:pre-wrap; margin-bottom:16px; max-height:400px; overflow-y:auto"></div>
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px" id="detail-actions">
+      </div>
     </div>
   </div>
 
@@ -148,11 +158,58 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
         <td>${new Date(c.timestamp).toLocaleString('ko-KR')}</td>
         <td><span class="badge rating-${c.rating}">⭐${c.rating}</span></td>
         <td>${c.predicted_tier}</td>
-        <td>${c.actual_tier || '-'}</td>
-        <td class="preview">${c.conversation_preview}</td>
-        <td>${c.comments || '-'}</td>
+        <td class="preview" style="cursor:pointer" onclick='showDetail(${JSON.stringify(c).replace(/'/g, "&apos;")})'>${c.conversation_preview}...</td>
+        <td style="font-size:13px">${c.comments || '-'}</td>
+        <td>
+          <button onclick='handleAction("${c.feedback_id}", "confirm_scam")' style="background:var(--danger); padding:4px 8px; font-size:12px">스캠 확정</button>
+          <button onclick='handleAction("${c.feedback_id}", "mark_safe")' style="background:var(--ok); padding:4px 8px; font-size:12px">정상 대화</button>
+          <button onclick='handleAction("${c.feedback_id}", "delete")' style="background:var(--muted); padding:4px 8px; font-size:12px">삭제</button>
+        </td>
       </tr>`).join('');
       document.getElementById('cases-body').innerHTML = rows || '<tr><td colspan="6" style="text-align:center; color:var(--muted)">피드백이 없습니다</td></tr>';
+    }
+    
+    let currentCase = null;
+    
+    function showDetail(caseData) {
+      currentCase = caseData;
+      document.getElementById('detail-conversation').textContent = caseData.conversation_full;
+      document.getElementById('detail-modal').style.display = 'block';
+      
+      document.getElementById('detail-actions').innerHTML = `
+        <button onclick='handleActionFromDetail("confirm_scam")' style="background:var(--danger); padding:12px; border:none; color:white; border-radius:8px; cursor:pointer">✓ 스캠 확정</button>
+        <button onclick='handleActionFromDetail("mark_safe")' style="background:var(--ok); padding:12px; border:none; color:white; border-radius:8px; cursor:pointer">✓ 정상 대화</button>
+        <button onclick='handleActionFromDetail("delete")' style="background:var(--muted); padding:12px; border:none; color:white; border-radius:8px; cursor:pointer">🗑 삭제</button>
+        <button onclick='handleActionFromDetail("ignore")' style="background:#1a2442; padding:12px; border:1px solid var(--outline); color:var(--fg); border-radius:8px; cursor:pointer">무시</button>
+      `;
+    }
+    
+    function closeDetail() {
+      document.getElementById('detail-modal').style.display = 'none';
+      currentCase = null;
+    }
+    
+    async function handleAction(feedbackId, action) {
+      if (!confirm(`정말 "${action}"을 실행하시겠습니까?`)) return;
+      
+      try {
+        const r = await fetch('/api/v1/feedback/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feedback_id: feedbackId, action: action })
+        });
+        const result = await r.json();
+        alert(result.message);
+        loadData(); // 새로고침
+      } catch (e) {
+        alert('처리 중 오류가 발생했습니다');
+      }
+    }
+    
+    async function handleActionFromDetail(action) {
+      if (!currentCase) return;
+      await handleAction(currentCase.feedback_id, action);
+      closeDetail();
     }
     
     loadData();
