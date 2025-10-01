@@ -52,14 +52,19 @@ def home():
                    padding:14px 24px; border-radius:10px; font-weight:700; cursor:pointer; font-size:15px}
     button.primary:hover{filter:brightness(1.1); transform:translateY(-1px)}
     button.primary:disabled{opacity:0.6; cursor:not-allowed; transform:none}
-    .star-btn{background:var(--bg); color:#ffd966; border:1px solid var(--outline); padding:8px 12px;
+    .star-btn{background:var(--bg); border:1px solid var(--outline); padding:8px 12px;
                   border-radius:8px; cursor:pointer; font-size:14px}
+    [data-theme="dark"] .star-btn{color:#ffd966}
+    [data-theme="light"] .star-btn{color:#d97706}
     .star-btn:hover{background:var(--bg-card); border-color:var(--brand)}
     .result{margin-top:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
     .badge{display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; text-transform:uppercase}
-    .low{background:rgba(24,160,88,.15); color:#73d49b}
+    .low{background:rgba(24,160,88,.15); color:#18a058}
+    [data-theme="light"] .low{background:rgba(5,150,105,.15); color:#059669}
     .medium{background:rgba(194,155,0,.18); color:#ffd966}
+    [data-theme="light"] .medium{background:rgba(217,119,6,.15); color:#d97706; font-weight:800}
     .high{background:rgba(199,31,31,.18); color:#ff9b9b}
+    [data-theme="light"] .high{background:rgba(220,38,38,.15); color:#dc2626}
     .percent{font-size:32px; font-weight:700}
     .muted{color:var(--muted); font-size:13px}
     .foot{margin-top:12px; padding:16px; background:rgba(106,166,255,.05); border-radius:8px}
