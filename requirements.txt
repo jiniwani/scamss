@@ -11,8 +11,8 @@ langid==1.1.6
 pandas==2.1.3
 numpy==1.26.2
 
-# Translation
-google-cloud-translate==3.12.1
+# Translation (removed - Gemini handles multilingual natively)
+# google-cloud-translate==3.12.1
 
 # Storage & Database
 google-cloud-storage==2.10.0

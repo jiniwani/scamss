@@ -3,11 +3,8 @@ from typing import Dict
 from langdetect import detect_langs
 import langid
 
-from google.cloud import translate_v2 as translate  # type: ignore
-import os
-
 from ..utils.pii import mask_pii
-from ..utils.text_normalize import normalize_slang, is_cultural_expression, detect_grammar_awkwardness
+from ..utils.text_normalize import normalize_slang, is_cultural_expression
 
 
 def detect_language(text: str) -> Dict:
@@ -32,55 +29,33 @@ def detect_language(text: str) -> Dict:
     return {"language": lang, "confidence": conf, "script": script}
 
 
-def translate_if_needed(text: str, source_lang: str, enable_back_translation: bool = False) -> Dict:
+def normalize_text(text: str, source_lang: str) -> Dict:
     """
-    Translate to English only if not English. Optionally verify with back-translation.
+    Normalize slang and obfuscation. No translation - Gemini handles multilingual directly.
     """
     if not text:
-        return {"original": "", "translated": "", "source_language": source_lang or "und", "grammar_check": None}
+        return {"original": "", "normalized": "", "source_language": source_lang or "und"}
 
-    # Normalize slang/obfuscation before translation
+    # Normalize slang/obfuscation
     normalized = normalize_slang(text)
-
-    if (source_lang or '').lower().startswith('en'):
-        return {"original": text, "translated": normalized, "source_language": source_lang or "en", "grammar_check": None}
-
-    # Skip external call if ADC not configured (tests/local dev)
-    if not os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') and not os.environ.get('GCP_PROJECT'):
-        return {"original": text, "translated": normalized, "source_language": source_lang or 'und', "grammar_check": None}
-
-    client = translate.Client()
-    
-    # Forward translation
-    res = client.translate(normalized, target_language='en', source_language=source_lang if source_lang else None)
-    translated = res.get('translatedText', normalized)
-    detected_lang = res.get('detectedSourceLanguage', source_lang or 'und')
-    
-    grammar_check = None
-    # Back-translation for grammar verification (optional, costly)
-    if enable_back_translation and detected_lang != 'en':
-        try:
-            back_res = client.translate(translated, target_language=detected_lang, source_language='en')
-            back_translated = back_res.get('translatedText', '')
-            grammar_check = detect_grammar_awkwardness(text, translated, back_translated)
-        except Exception:
-            pass
     
     return {
         "original": text,
-        "translated": translated,
-        "source_language": detected_lang,
-        "grammar_check": grammar_check
+        "normalized": normalized,
+        "source_language": source_lang or "und"
     }
 
 
 def preprocess_text(text: str, do_mask: bool = True) -> Dict:
     lang_info = detect_language(text)
-    tx = translate_if_needed(text, lang_info['language'])
-    masked = mask_pii(tx['translated'] if do_mask else tx['original']) if do_mask else {"masked_text": tx['translated'], "detected_pii": []}
+    normalized_result = normalize_text(text, lang_info['language'])
+    
+    # Apply PII masking on normalized text
+    masked = mask_pii(normalized_result['normalized']) if do_mask else {"masked_text": normalized_result['normalized'], "detected_pii": []}
+    
     return {
         "language": lang_info,
-        "translation": tx,
+        "normalized": normalized_result,
         "pii": masked,
     }
 

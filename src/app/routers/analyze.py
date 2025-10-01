@@ -48,15 +48,6 @@ def analyze(body: AnalyzeRequest):
     # Concatenate contents for language detection; simple approach
     joined = "\n".join([m.content for m in body.messages])
     pp = preprocess_text(joined, do_mask=body.options.mask_pii)
-    
-    # Add grammar suspicion to score if detected
-    grammar_suspicion_boost = 0.0
-    if pp.get('translation', {}).get('grammar_check'):
-        gc = pp['translation']['grammar_check']
-        if gc.get('suspicion_level') == 'high':
-            grammar_suspicion_boost = 0.15
-        elif gc.get('suspicion_level') == 'medium':
-            grammar_suspicion_boost = 0.08
 
     # If Gemini key is configured, try model-based analysis first
     use_gemini = bool(os.getenv('GEMINI_API_KEY')) and body.options.mode in ("realtime", "detailed")
@@ -106,9 +97,6 @@ def analyze(body: AnalyzeRequest):
         ),
     }
     score = calculate_risk_score(detected, conversation_context)
-    
-    # Apply grammar suspicion boost
-    score = min(1.0, score + grammar_suspicion_boost)
 
     # Build red_flags list
     red_flags_list = []
