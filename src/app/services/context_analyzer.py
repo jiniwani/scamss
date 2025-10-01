@@ -102,7 +102,11 @@ def _detect_topic_shifts(messages: List[Dict]) -> Dict:
     abrupt_shift = False
     
     for i, msg in enumerate(messages):
-        content = (msg.get('content') or msg.get('text') or '').lower()
+        # Handle both dict and Pydantic model
+        if hasattr(msg, 'content'):
+            content = msg.content.lower()
+        else:
+            content = (msg.get('content') or msg.get('text') or '').lower()
         
         has_money = any(kw in content for kw in financial_keywords)
         has_love = any(kw in content for kw in love_keywords)

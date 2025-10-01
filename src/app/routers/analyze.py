@@ -8,6 +8,7 @@ from ..services.preprocess import preprocess_text
 from ..services.risk_engine import detect_red_flags, calculate_risk_score, determine_risk_tier
 from ..services.gemini_client import analyze_with_gemini
 from ..services.context_analyzer import analyze_conversation_context, calculate_context_risk_boost
+from ..services.entity_validator import detect_inconsistencies, calculate_entity_risk_boost
 from ..utils.pii import mask_pii
 
 router = APIRouter()
@@ -94,6 +95,10 @@ def analyze(body: AnalyzeRequest):
     # Analyze conversation flow and temporal patterns
     context_analysis = analyze_conversation_context(body.messages)
     context_boost = calculate_context_risk_boost(context_analysis)
+    
+    # Validate entity consistency
+    entity_validation = detect_inconsistencies(body.messages)
+    entity_boost = calculate_entity_risk_boost(entity_validation)
 
     conversation_context = {
         'message_count': len(msgs),
@@ -103,8 +108,8 @@ def analyze(body: AnalyzeRequest):
     }
     base_score = calculate_risk_score(detected, conversation_context)
     
-    # Apply context-based boost
-    score = min(1.0, base_score + context_boost)
+    # Apply context-based and entity-based boosts
+    score = min(1.0, base_score + context_boost + entity_boost)
 
     # Build red_flags list
     red_flags_list = []
