@@ -9,6 +9,8 @@ from ..services.risk_engine import detect_red_flags, calculate_risk_score, deter
 from ..services.gemini_client import analyze_with_gemini
 from ..services.context_analyzer import analyze_conversation_context, calculate_context_risk_boost
 from ..services.entity_validator import detect_inconsistencies, calculate_entity_risk_boost
+from ..services.sentiment_analyzer import analyze_emotional_manipulation, calculate_emotional_risk_boost
+from ..services.money_pattern_analyzer import analyze_money_patterns, calculate_money_pattern_risk_boost
 from ..utils.pii import mask_pii
 
 router = APIRouter()
@@ -99,6 +101,14 @@ def analyze(body: AnalyzeRequest):
     # Validate entity consistency
     entity_validation = detect_inconsistencies(body.messages)
     entity_boost = calculate_entity_risk_boost(entity_validation)
+    
+    # Analyze emotional manipulation
+    sentiment_analysis = analyze_emotional_manipulation(body.messages)
+    sentiment_boost = calculate_emotional_risk_boost(sentiment_analysis)
+    
+    # Analyze money amount patterns
+    money_analysis = analyze_money_patterns(body.messages)
+    money_boost = calculate_money_pattern_risk_boost(money_analysis)
 
     conversation_context = {
         'message_count': len(msgs),
@@ -108,8 +118,9 @@ def analyze(body: AnalyzeRequest):
     }
     base_score = calculate_risk_score(detected, conversation_context)
     
-    # Apply context-based and entity-based boosts
-    score = min(1.0, base_score + context_boost + entity_boost)
+    # Apply all boosts (context, entity, sentiment, money patterns)
+    total_boost = context_boost + entity_boost + sentiment_boost + money_boost
+    score = min(1.0, base_score + total_boost)
 
     # Build red_flags list
     red_flags_list = []
