@@ -52,11 +52,16 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
   <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
       <h1 style="margin:0">📊 Verio 관리자 대시보드</h1>
-      <div style="display:flex; gap:8px">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
         <button onclick="filterByPeriod('today')" id="btn-today" style="padding:8px 16px; background:var(--brand); border:none; color:white; border-radius:6px; cursor:pointer">오늘</button>
         <button onclick="filterByPeriod('week')" id="btn-week" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 주</button>
         <button onclick="filterByPeriod('month')" id="btn-month" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 달</button>
         <button onclick="filterByPeriod('all')" id="btn-all" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">전체</button>
+        <span style="color:var(--muted); margin:0 8px">|</span>
+        <input type="date" id="date-from" style="padding:8px; background:#0f1730; color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
+        <span style="color:var(--muted)">~</span>
+        <input type="date" id="date-to" style="padding:8px; background:#0f1730; color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
+        <button onclick="filterByCustomDate()" style="padding:8px 16px; background:#7b6cff; border:none; color:white; border-radius:6px; cursor:pointer">적용</button>
       </div>
     </div>
     
@@ -132,6 +137,8 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
     
     let currentPeriod = 'all';
     let allFeedbackData = null;
+    let customDateFrom = null;
+    let customDateTo = null;
     
     function filterByPeriod(period) {
       currentPeriod = period;
@@ -149,6 +156,30 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       loadData();
     }
     
+    function filterByCustomDate() {
+      const fromInput = document.getElementById('date-from').value;
+      const toInput = document.getElementById('date-to').value;
+      
+      if (!fromInput || !toInput) {
+        alert('시작 날짜와 종료 날짜를 모두 선택하세요');
+        return;
+      }
+      
+      currentPeriod = 'custom';
+      customDateFrom = new Date(fromInput);
+      customDateTo = new Date(toInput);
+      customDateTo.setHours(23, 59, 59, 999); // End of day
+      
+      // Reset all preset buttons
+      ['today', 'week', 'month', 'all'].forEach(p => {
+        const btn = document.getElementById('btn-' + p);
+        btn.style.background = '#1a2442';
+        btn.style.border = '1px solid var(--outline)';
+      });
+      
+      loadData();
+    }
+    
     function filterDataByPeriod(feedbacks, period) {
       if (period === 'all') return feedbacks;
       
@@ -158,7 +189,9 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       return feedbacks.filter(fb => {
         const fbDate = new Date(fb.timestamp);
         
-        if (period === 'today') {
+        if (period === 'custom') {
+          return fbDate >= customDateFrom && fbDate <= customDateTo;
+        } else if (period === 'today') {
           return fbDate >= today;
         } else if (period === 'week') {
           const weekAgo = new Date(today);
