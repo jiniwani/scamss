@@ -7,6 +7,7 @@ from google.cloud import translate_v2 as translate  # type: ignore
 import os
 
 from ..utils.pii import mask_pii
+from ..utils.text_normalize import normalize_slang, is_cultural_expression, detect_grammar_awkwardness
 
 
 def detect_language(text: str) -> Dict:
@@ -31,23 +32,46 @@ def detect_language(text: str) -> Dict:
     return {"language": lang, "confidence": conf, "script": script}
 
 
-def translate_if_needed(text: str, source_lang: str) -> Dict:
+def translate_if_needed(text: str, source_lang: str, enable_back_translation: bool = False) -> Dict:
     """
-    Translate to English only if not English.
+    Translate to English only if not English. Optionally verify with back-translation.
     """
     if not text:
-        return {"original": "", "translated": "", "source_language": source_lang or "und"}
+        return {"original": "", "translated": "", "source_language": source_lang or "und", "grammar_check": None}
+
+    # Normalize slang/obfuscation before translation
+    normalized = normalize_slang(text)
 
     if (source_lang or '').lower().startswith('en'):
-        return {"original": text, "translated": text, "source_language": source_lang or "en"}
+        return {"original": text, "translated": normalized, "source_language": source_lang or "en", "grammar_check": None}
 
     # Skip external call if ADC not configured (tests/local dev)
     if not os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') and not os.environ.get('GCP_PROJECT'):
-        return {"original": text, "translated": text, "source_language": source_lang or 'und'}
+        return {"original": text, "translated": normalized, "source_language": source_lang or 'und', "grammar_check": None}
 
     client = translate.Client()
-    res = client.translate(text, target_language='en', source_language=source_lang if source_lang else None)
-    return {"original": text, "translated": res.get('translatedText', text), "source_language": res.get('detectedSourceLanguage', source_lang or 'und')}
+    
+    # Forward translation
+    res = client.translate(normalized, target_language='en', source_language=source_lang if source_lang else None)
+    translated = res.get('translatedText', normalized)
+    detected_lang = res.get('detectedSourceLanguage', source_lang or 'und')
+    
+    grammar_check = None
+    # Back-translation for grammar verification (optional, costly)
+    if enable_back_translation and detected_lang != 'en':
+        try:
+            back_res = client.translate(translated, target_language=detected_lang, source_language='en')
+            back_translated = back_res.get('translatedText', '')
+            grammar_check = detect_grammar_awkwardness(text, translated, back_translated)
+        except Exception:
+            pass
+    
+    return {
+        "original": text,
+        "translated": translated,
+        "source_language": detected_lang,
+        "grammar_check": grammar_check
+    }
 
 
 def preprocess_text(text: str, do_mask: bool = True) -> Dict:
