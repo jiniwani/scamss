@@ -8,9 +8,9 @@ RED_FLAG_PATTERNS = {
             'keywords': [
                 'send money', 'need cash', 'wire transfer', 'help financially', '$', 'dollars',
                 '송금', '입금', '돈 보내', '보내주세요', '보내 줄래', '지원해줘', '급히 돈', '긴급 자금',
-                '이체', '충전', '보증금', '페이로 보내'
+                '이체', '충전', '보증금', '페이로 보내', '소액만', '계좌로', '도와주면', '갚을게'
             ],
-            'weight': 0.3
+            'weight': 0.35
         },
         'gift_card_request': {
             'keywords': ['gift card', 'itunes', 'steam card', 'google play', '기프트카드', '아이튠즈', '구글플레이'],
@@ -56,16 +56,24 @@ RED_FLAG_PATTERNS = {
             'weight': 0.35
         },
         'fees_documents': {
-            'keywords': ['customs fee', 'visa fee', 'lawyer fee', 'processing fee', 'clearance', '수수료', '비용', '관세', '서류비'],
+            'keywords': ['customs fee', 'visa fee', 'lawyer fee', 'processing fee', 'clearance', '수수료', '비용', '관세', '서류비', '배송비', '보관료'],
             'weight': 0.35
         },
         'exchange_deposit': {
-            'keywords': ['거래소', '입금', '충전', '지갑으로 보내', '코인 보내'],
+            'keywords': ['거래소', '입금', '충전', '지갑으로 보내', '코인 보내', 'VIP 방', '입장료'],
             'weight': 0.35
         },
         'promise_withdrawal': {
             'keywords': ['출금 줄게', '출금 줄게요', '출금 해줄게', '출금 가능', '출금 도와줄게'],
             'weight': 0.25
+        },
+        'prize_scam': {
+            'keywords': ['당첨', '축하합니다', '경품', '스마트폰 당첨', '복권', 'congratulations', 'you won', 'prize'],
+            'weight': 0.3
+        },
+        'account_restriction': {
+            'keywords': ['계좌 제한', '계정 잠금', '동결', '차단', 'account locked', 'suspended', '복구', '인증 필요'],
+            'weight': 0.35
         }
     },
     'relationship': {
@@ -74,8 +82,8 @@ RED_FLAG_PATTERNS = {
             'weight': 0.25
         },
         'meeting_avoidance': {
-            'keywords': ['camera broken', 'bad connection', 'next week', 'soon', 'working away'],
-            'weight': 0.2
+            'keywords': ['camera broken', 'bad connection', 'next week', 'soon', 'working away', '통화 어려워', '통화 안돼', '카메라 고장', '영상 통화 나중에'],
+            'weight': 0.25
         },
         'rush_intimacy': {
             'keywords': ['marry me', 'our future', 'our kids', 'grow old together'],
@@ -88,8 +96,8 @@ RED_FLAG_PATTERNS = {
     },
     'identity': {
         'military_claim': {
-            'keywords': ['soldier', 'deployed', 'military base', 'overseas mission'],
-            'weight': 0.2
+            'keywords': ['soldier', 'deployed', 'military base', 'overseas mission', '파병', '해외 파병', '군인', '군 복무'],
+            'weight': 0.25
         },
         'oil_rig_claim': {
             'keywords': ['oil rig', 'offshore', 'north sea', 'drilling platform'],
@@ -99,9 +107,25 @@ RED_FLAG_PATTERNS = {
             'keywords': ['surgeon', 'un doctor', 'civil engineer abroad', 'contractor'],
             'weight': 0.15
         },
+        'authority_impersonation': {
+            'keywords': ['검찰', '경찰', '수사관', '국세청', '검사', '형사', '세무서', 'prosecutor', 'detective', 'tax office'],
+            'weight': 0.4
+        },
+        'delivery_impersonation': {
+            'keywords': ['택배', '관세', '배송 보류', '국제특송', 'customs', 'delivery suspended', '반송'],
+            'weight': 0.35
+        },
+        'tech_support_impersonation': {
+            'keywords': ['ms 보안팀', '마이크로소프트', '애플 보안', '원격 접속', 'remote access', 'anydesk', 'teamviewer'],
+            'weight': 0.35
+        },
         'document_request': {
-            'keywords': ['passport', 'id copy', 'account verification', 'verification copy'],
-            'weight': 0.25
+            'keywords': ['passport', 'id copy', 'account verification', 'verification copy', '신분증', '주민등록증', '계좌 인증'],
+            'weight': 0.3
+        },
+        'family_impersonation': {
+            'keywords': ['엄마', '아빠', '폰 고장', '폰 바꿨어', '급한 돈', '병원 수납', '사고났어'],
+            'weight': 0.4
         },
         'inconsistent_details': {
             'detection': 'contradiction_analysis',
@@ -114,16 +138,27 @@ RED_FLAG_PATTERNS = {
             'weight': 0.25
         },
         'time_pressure': {
-            'keywords': ['urgent', 'today', 'right now', 'deadline', 'expire', 'within 1 hour', 'one hour', 'limited time', 'spot will be given', '긴급', '지금', '오늘', '바로', '급히'],
-            'weight': 0.2
+            'keywords': [
+                'urgent', 'today', 'right now', 'deadline', 'expire', 'within 1 hour', 'one hour', 'limited time', 'spot will be given',
+                '긴급', '지금', '오늘', '바로', '급히', '오늘만', '30분 안에', '10분 내', '시간 없어', '마지막 기회'
+            ],
+            'weight': 0.25
         },
         'small_test_request': {
-            'keywords': ['small favor', 'just $20', 'prove you care', '소액', '작게 먼저', '테스트로 조금'],
+            'keywords': ['small favor', 'just $20', 'prove you care', '소액', '작게 먼저', '테스트로 조금', '소액만'],
             'weight': 0.15
         },
         'follow_orders': {
-            'keywords': ['시키는대로', '시키는 대로', '지시대로', '따라만 하세요', '말대로만 하세요'],
+            'keywords': ['시키는대로', '시키는 대로', '지시대로', '따라만 하세요', '말대로만 하세요', '입력하세요', '지금 처리하세요'],
             'weight': 0.25
+        },
+        'threat': {
+            'keywords': ['체포영장', '계좌 동결', '영구 잠금', '손해', '큰일', '후회', '반송', 'arrest warrant', 'account freeze'],
+            'weight': 0.35
+        },
+        'phishing_link': {
+            'regex': r'(bit\.ly|goo\.gl|tinyurl|[a-z0-9-]+\.(kr|com)/[a-z0-9-]{6,})',
+            'weight': 0.4
         }
     }
 }
