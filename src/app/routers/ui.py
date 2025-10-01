@@ -188,12 +188,14 @@ def home():
         const evidenceDiv = document.getElementById('evidence');
         const evidenceList = document.getElementById('evidence-list');
         if (data.evidence_spans && data.evidence_spans.length > 0) {
-          evidenceList.innerHTML = data.evidence_spans.map(ev => `
+          evidenceList.innerHTML = data.evidence_spans.map(ev => {
+            const flagKo = data.red_flags.find(f => f.type === ev.flag_type)?.type_ko || ev.flag_type;
+            return `
             <div style="padding:10px; background:#0f1730; border-left:3px solid var(--${cls === 'high' ? 'danger' : (cls === 'medium' ? 'warn' : 'brand')}); border-radius:6px">
-              <div style="font-size:12px; color:var(--muted); margin-bottom:4px">턴 ${ev.turn} (${ev.sender}) - ${ev.flag_type.replace(/_/g, ' ')}</div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:4px">턴 ${ev.turn} (${ev.sender}) - ${flagKo}</div>
               <div style="font-size:14px">${ev.text}</div>
             </div>
-          `).join('');
+          `}).join('');
           evidenceDiv.style.display = 'block';
         } else {
           evidenceDiv.style.display = 'none';
@@ -268,15 +270,52 @@ def home():
       });
     }
     
-    // Download result as JSON
+    // Download result as formatted text report
     function downloadResult() {
       if (!lastAnalysisResult) return;
-      const dataStr = JSON.stringify(lastAnalysisResult, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
+      
+      const data = lastAnalysisResult;
+      const tierKo = {low:'낮음',medium:'중간',high:'높음'}[data.risk_tier] || data.risk_tier;
+      const percent = Math.round((data.score ?? 0) * 100);
+      const priorityKo = {monitor: '모니터링', warn: '경고', block: '차단'}[data.recommended_action?.priority] || '-';
+      
+      let report = `Verio 로맨스 스캠 분석 결과
+${'='.repeat(50)}
+
+분석 일시: ${new Date().toLocaleString('ko-KR')}
+위험도: ${tierKo}
+스캠 확률: ${percent}%
+신뢰도: ${Math.round((data.confidence ?? 0) * 100)}%
+권장 조치: ${priorityKo}
+
+${data.recommended_action?.user_guidance || ''}
+
+${'='.repeat(50)}
+탐지된 위험 요소 (${data.red_flags?.length || 0}개)
+${'='.repeat(50)}
+
+`;
+      
+      (data.red_flags || []).forEach((flag, i) => {
+        report += `${i+1}. ${flag.type_ko || flag.description} (${flag.category}, ${flag.severity})\n`;
+      });
+      
+      report += `\n${'='.repeat(50)}\n안전 수칙\n${'='.repeat(50)}\n\n`;
+      (data.recommended_action?.safe_practices || []).forEach((practice, i) => {
+        report += `${i+1}. ${practice}\n`;
+      });
+      
+      if (data.safe_reply_template) {
+        report += `\n${'='.repeat(50)}\n안전한 응답 예시\n${'='.repeat(50)}\n\n${data.safe_reply_template}\n`;
+      }
+      
+      report += `\n\n${'='.repeat(50)}\n생성: Verio (https://github.com/jiniwani/scamss)\n${'='.repeat(50)}`;
+      
+      const blob = new Blob([report], { type: 'text/plain; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `verio_분석결과_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `Verio_스캠분석_${new Date().toISOString().split('T')[0]}.txt`;
       a.click();
       URL.revokeObjectURL(url);
     }

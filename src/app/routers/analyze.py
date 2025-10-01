@@ -14,6 +14,7 @@ from ..services.money_pattern_analyzer import analyze_money_patterns, calculate_
 from ..services.sequence_analyzer import detect_scam_sequence, calculate_sequence_risk_boost
 from ..services.style_analyzer import analyze_language_style, calculate_style_risk_boost
 from ..utils.pii import mask_pii
+from ..utils.translations import FLAG_TYPE_KO
 
 router = APIRouter()
 
@@ -140,9 +141,10 @@ def analyze(body: AnalyzeRequest):
             severity = 'severe' if category == 'financial' and flag_type in ('direct_money_request', 'gift_card_request') else 'moderate'
             red_flags_list.append({
                 'type': flag_type,
+                'type_ko': FLAG_TYPE_KO.get(flag_type, flag_type.replace('_', ' ')),
                 'category': category,
                 'severity': severity,
-                'description': flag_type.replace('_', ' '),
+                'description': FLAG_TYPE_KO.get(flag_type, flag_type.replace('_', ' ')),
             })
 
     tier_info = determine_risk_tier(score, red_flags_list)
