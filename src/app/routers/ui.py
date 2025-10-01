@@ -43,6 +43,9 @@ def home():
                    padding:14px 24px; border-radius:10px; font-weight:700; cursor:pointer; font-size:15px}
     button.primary:hover{filter:brightness(1.1); transform:translateY(-1px)}
     button.primary:disabled{opacity:0.6; cursor:not-allowed; transform:none}
+    .star-btn{background:#0f1730; color:#ffd966; border:1px solid var(--outline); padding:8px 12px;
+              border-radius:8px; cursor:pointer; font-size:14px}
+    .star-btn:hover{background:#1a2442; border-color:var(--brand)}
     .result{margin-top:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
     .badge{display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; text-transform:uppercase}
     .low{background:rgba(24,160,88,.15); color:#73d49b}
@@ -99,6 +102,18 @@ def home():
       </div>
 
       <div class=result id=summary></div>
+      <div id=feedback style="display:none; margin-top:16px; padding:16px; background:rgba(106,166,255,.08); border-radius:10px">
+        <div style="margin-bottom:10px; font-weight:600">이 분석 결과가 도움이 되셨나요?</div>
+        <div style="display:flex; gap:8px; margin-bottom:10px">
+          <button class="star-btn" data-rating="1">⭐</button>
+          <button class="star-btn" data-rating="2">⭐⭐</button>
+          <button class="star-btn" data-rating="3">⭐⭐⭐</button>
+          <button class="star-btn" data-rating="4">⭐⭐⭐⭐</button>
+          <button class="star-btn" data-rating="5">⭐⭐⭐⭐⭐</button>
+        </div>
+        <textarea id="feedback-comment" placeholder="의견을 남겨주세요 (선택)" style="width:100%; min-height:60px; margin-bottom:8px"></textarea>
+        <div style="font-size:12px; color:var(--muted)">낮은 별점의 경우 대화 내용이 익명으로 저장되어 개선에 활용됩니다.</div>
+      </div>
       <pre id=out></pre>
       
       <div class="foot">
@@ -118,22 +133,28 @@ def home():
     const btn = document.getElementById('btn');
     const out = document.getElementById('out');
     const sum = document.getElementById('summary');
+    const feedbackDiv = document.getElementById('feedback');
+    let lastAnalysisResult = null;
+    let lastInputText = '';
+    
     btn.onclick = async () => {
       const text = document.getElementById('txt').value.trim();
       const mask = document.getElementById('mask').checked;
       const mode = document.getElementById('mode').value;
       if (!text) { alert('대화 내용을 입력하세요'); return; }
       btn.disabled = true; btn.textContent = '분석 중...';
-      sum.innerHTML = ''; out.style.display = 'none';
+      sum.innerHTML = ''; out.style.display = 'none'; feedbackDiv.style.display = 'none';
+      lastInputText = text;
       try {
         const headers = { 'Content-Type': 'application/json' };
         const providedKey = document.getElementById('apikey').value.trim();
         if (providedKey) headers['X-Gemini-Key'] = providedKey;
         const r = await fetch('/api/v1/analyze_text', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: headers,
           body: JSON.stringify({ text, mode, mask_pii: mask })
         });
         const data = await r.json();
+        lastAnalysisResult = data;
         const tier = (data.risk_tier || 'unknown').toLowerCase();
         const score = (data.score ?? 0);
         const percent = Math.round(score * 100);
@@ -144,13 +165,44 @@ def home():
           <span class=muted>권장 조치: ${data.recommended_action?.priority || '-'}</span>
         `;
         out.style.display = 'none';
+        feedbackDiv.style.display = 'block';
       } catch (e) {
         alert('분석 중 오류가 발생했습니다. 다시 시도해 주세요.');
         console.error(e);
       } finally {
-        btn.disabled = false; btn.textContent = '분석하기';
+        btn.disabled = false; btn.textContent = '분석 시작';
       }
     };
+    
+    // 별점 버튼 이벤트
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.onclick = async () => {
+        const rating = parseInt(btn.dataset.rating);
+        const comment = document.getElementById('feedback-comment').value.trim();
+        if (!lastAnalysisResult) return;
+        
+        const feedbackPayload = {
+          analysis_id: `analysis_${Date.now()}`,
+          rating: rating,
+          actual_tier: null,
+          comments: comment || null,
+          conversation_text: lastInputText,
+          predicted_tier: lastAnalysisResult.risk_tier,
+          predicted_score: lastAnalysisResult.score
+        };
+        
+        try {
+          await fetch('/api/v1/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feedbackPayload)
+          });
+          feedbackDiv.innerHTML = '<div style="color:#73d49b; font-weight:600">✅ 피드백이 저장되었습니다. 감사합니다!</div>';
+        } catch (e) {
+          alert('피드백 전송 중 오류가 발생했습니다.');
+        }
+      };
+    });
   </script>
 </body>
 </html>
