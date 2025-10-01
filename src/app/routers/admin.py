@@ -1,14 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Header
 from fastapi.responses import HTMLResponse
 import json
 from pathlib import Path
+import os
 
 
 router = APIRouter()
 
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'verio2025')  # 환경변수 또는 기본값
+
 
 @router.get("/", response_class=HTMLResponse)
-def admin_dashboard():
+def admin_dashboard(authorization: str | None = Header(default=None)):
     return """
 <!doctype html>
 <html lang=ko>
@@ -97,6 +100,18 @@ def admin_dashboard():
   </div>
 
   <script>
+    // Simple password protection
+    const savedPw = sessionStorage.getItem('admin_pw');
+    if (!savedPw) {
+      const pw = prompt('관리자 비밀번호를 입력하세요:');
+      if (pw !== 'verio2025') {
+        alert('비밀번호가 틀렸습니다.');
+        window.location.href = '/ui/';
+      } else {
+        sessionStorage.setItem('admin_pw', pw);
+      }
+    }
+    
     async function loadData() {
       const r = await fetch('/api/v1/feedback/stats');
       const data = await r.json();

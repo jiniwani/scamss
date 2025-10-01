@@ -146,31 +146,98 @@ def analyze(body: AnalyzeRequest):
             })
 
     tier_info = determine_risk_tier(score, red_flags_list)
+    
+    # Generate evidence highlights
+    evidence_spans = _extract_evidence_spans(body.messages, red_flags_list, detected)
+    
+    # Generate safe reply template
+    safe_reply = _generate_safe_reply_template(tier_info['tier'], red_flags_list)
 
     latency_ms = int((time.time() - start) * 1000)
     return {
         'risk_tier': tier_info['tier'],
         'score': score,
         'red_flags': red_flags_list,
-        'evidence_spans': [],
-        'reasoning': 'Rule-based baseline analysis',
+        'evidence_spans': evidence_spans,
+        'reasoning': '규칙 기반 다층 분석 (맥락, 엔티티, 감정, 금액, 시퀀스, 스타일)',
         'confidence': tier_info['confidence'],
         'recommended_action': {
             'priority': 'monitor' if tier_info['tier'] == 'low' else ('warn' if tier_info['tier'] == 'medium' else 'block'),
-            'user_guidance': '기본 규칙 기반 분석 결과입니다.',
+            'user_guidance': _get_user_guidance(tier_info['tier']),
             'safe_practices': [
-                '개인정보 공유 금지',
-                '금전 요구 즉시 중단',
-                '비디오 통화로 신원 확인'
+                '개인정보 절대 공유 금지',
+                '금전 요구 시 즉시 대화 중단 및 차단',
+                '비디오 통화로 신원 확인',
+                '가족/친구에게 상황 공유',
+                '의심스러우면 경찰(112) 또는 사이버범죄 신고센터(182) 신고'
             ],
         },
+        'safe_reply_template': safe_reply,
         'analysis_metadata': {
-            'model_used': 'rule-based',
+            'model_used': 'rule-based-multilayer',
             'processing_time_ms': latency_ms,
             'language_detected': pp['language']['language'],
             'pii_masked_count': sum(d['count'] for d in pp['pii']['detected_pii']) if pp['pii']['detected_pii'] else 0,
         },
     }
+
+
+def _extract_evidence_spans(messages, red_flags_list, detected_flags):
+    """Extract specific text spans that triggered red flags."""
+    evidence = []
+    flag_types = {f['type'] for f in red_flags_list}
+    
+    for i, msg in enumerate(messages):
+        content = msg.content if hasattr(msg, 'content') else (msg.get('content') or '')
+        lowered = content.lower()
+        
+        # Check which flags this message triggers
+        for category, flags in detected_flags.items():
+            for flag_type in flags.keys():
+                if flag_type not in flag_types:
+                    continue
+                    
+                # Extract relevant portion (max 100 chars)
+                snippet = content[:100] if len(content) > 100 else content
+                evidence.append({
+                    'text': snippet,
+                    'turn': i,
+                    'sender': msg.sender if hasattr(msg, 'sender') else msg.get('sender', 'contact'),
+                    'flag_type': flag_type,
+                    'timestamp': msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp', '')
+                })
+                break  # One evidence per message
+    
+    return evidence[:10]  # Top 10
+
+
+def _generate_safe_reply_template(tier, red_flags_list):
+    """Generate safe reply template based on risk tier."""
+    if tier == 'high':
+        return None  # Don't reply to high-risk contacts
+    
+    flag_types = {f['type'] for f in red_flags_list}
+    
+    if 'direct_money_request' in flag_types or 'gift_card_request' in flag_types:
+        return "죄송하지만 금전 지원은 어렵습니다. 공식 채널을 통해 도움을 요청하시는 게 좋을 것 같아요."
+    
+    if 'meeting_avoidance' in flag_types:
+        return "직접 만나서 이야기하면 좋겠어요. 언제 시간 되시나요?"
+    
+    if 'love_bombing' in flag_types:
+        return "감사합니다. 다만 서로를 더 알아가는 시간이 필요할 것 같아요."
+    
+    return "좀 더 생각해보고 답변드릴게요. 급하지 않으니 천천히 이야기해요."
+
+
+def _get_user_guidance(tier):
+    """Get user guidance message based on tier."""
+    if tier == 'high':
+        return "🚨 매우 위험: 전형적인 스캠 패턴이 다수 발견되었습니다. 즉시 대화를 중단하고 차단하세요."
+    elif tier == 'medium':
+        return "⚠️ 주의 필요: 여러 의심스러운 패턴이 감지되었습니다. 신중하게 대응하고 개인정보·금전 요구를 거절하세요."
+    else:
+        return "✅ 안전: 현재까지 명확한 스캠 지표는 없으나, 금전 요구나 개인정보 공유 시 즉시 경계하세요."
 
 
 @router.post("/analyze_text")

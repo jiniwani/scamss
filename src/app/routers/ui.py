@@ -102,6 +102,23 @@ def home():
       </div>
 
       <div class=result id=summary></div>
+      
+      <div id=evidence style="display:none; margin-top:16px">
+        <h4 style="margin:0 0 10px 0; font-size:16px">🔍 증거 문장</h4>
+        <div id=evidence-list style="display:grid; gap:8px"></div>
+      </div>
+      
+      <div id=reply-template style="display:none; margin-top:16px; padding:16px; background:rgba(24,160,88,.08); border:1px solid rgba(24,160,88,.2); border-radius:10px">
+        <h4 style="margin:0 0 10px 0; font-size:16px; color:#73d49b">💬 안전한 응답 예시</h4>
+        <div id=reply-text style="padding:12px; background:#0f1730; border-radius:8px; font-size:14px"></div>
+        <button onclick="copyReply()" style="margin-top:10px; padding:8px 16px; background:var(--ok); border:none; color:white; border-radius:6px; cursor:pointer">복사하기</button>
+      </div>
+      
+      <div id=actions style="display:none; margin-top:16px; display:flex; gap:10px">
+        <button onclick="shareResult()" style="padding:10px 16px; background:var(--brand); border:none; color:white; border-radius:8px; cursor:pointer">결과 공유</button>
+        <button onclick="downloadResult()" style="padding:10px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:8px; cursor:pointer">결과 다운로드</button>
+      </div>
+      
       <div id=feedback style="display:none; margin-top:16px; padding:16px; background:rgba(106,166,255,.08); border-radius:10px">
         <div style="margin-bottom:10px; font-weight:600">이 분석 결과가 도움이 되셨나요?</div>
         <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap">
@@ -166,6 +183,35 @@ def home():
           <span class=percent>${percent}%</span>
           <span class=muted>권장 조치: ${priorityKo}</span>
         `;
+        
+        // Display evidence spans
+        const evidenceDiv = document.getElementById('evidence');
+        const evidenceList = document.getElementById('evidence-list');
+        if (data.evidence_spans && data.evidence_spans.length > 0) {
+          evidenceList.innerHTML = data.evidence_spans.map(ev => `
+            <div style="padding:10px; background:#0f1730; border-left:3px solid var(--${cls === 'high' ? 'danger' : (cls === 'medium' ? 'warn' : 'brand')}); border-radius:6px">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:4px">턴 ${ev.turn} (${ev.sender}) - ${ev.flag_type.replace(/_/g, ' ')}</div>
+              <div style="font-size:14px">${ev.text}</div>
+            </div>
+          `).join('');
+          evidenceDiv.style.display = 'block';
+        } else {
+          evidenceDiv.style.display = 'none';
+        }
+        
+        // Display safe reply template
+        const replyDiv = document.getElementById('reply-template');
+        const replyText = document.getElementById('reply-text');
+        if (data.safe_reply_template) {
+          replyText.textContent = data.safe_reply_template;
+          replyDiv.style.display = 'block';
+        } else {
+          replyDiv.style.display = 'none';
+        }
+        
+        // Show action buttons
+        document.getElementById('actions').style.display = 'flex';
+        
         out.style.display = 'none';
         feedbackDiv.style.display = 'block';
       } catch (e) {
@@ -205,6 +251,35 @@ def home():
         }
       };
     });
+    
+    // Copy safe reply to clipboard
+    function copyReply() {
+      const text = document.getElementById('reply-text').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('응답 템플릿이 복사되었습니다.');
+      });
+    }
+    
+    // Share result (copy link with analysis ID)
+    function shareResult() {
+      const url = window.location.origin + '/ui/?shared=' + Date.now();
+      navigator.clipboard.writeText(url).then(() => {
+        alert('공유 링크가 복사되었습니다: ' + url);
+      });
+    }
+    
+    // Download result as JSON
+    function downloadResult() {
+      if (!lastAnalysisResult) return;
+      const dataStr = JSON.stringify(lastAnalysisResult, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `verio_분석결과_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
