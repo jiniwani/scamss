@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from .routers.analyze import router as analyze_router
 from .routers.ui import router as ui_router
 from .routers.feedback import router as feedback_router
+from .routers.admin import router as admin_router
 
 
 app = FastAPI(title="Romance Scam Detection API", version="1.0.0")
@@ -27,6 +28,7 @@ def healthz():
 app.include_router(analyze_router, prefix="/api/v1")
 app.include_router(feedback_router, prefix="/api/v1")
 app.include_router(ui_router, prefix="/ui")
+app.include_router(admin_router, prefix="/admin")
 
 
 @app.get("/", response_class=HTMLResponse)
