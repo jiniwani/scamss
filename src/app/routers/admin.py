@@ -26,9 +26,16 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       --bg:#0b1020; --bg-card:#121a33; --fg:#e6edf3; --muted:#9fb0d0; --brand:#6aa6ff;
       --ok:#18a058; --warn:#c29b00; --danger:#c71f1f; --outline:#223055;
     }
+    [data-theme="light"]{
+      --bg:#f5f7fa; --bg-card:#ffffff; --fg:#1a202c; --muted:#64748b; --brand:#3b82f6;
+      --ok:#059669; --warn:#d97706; --danger:#dc2626; --outline:#e2e8f0;
+    }
     *{box-sizing:border-box}
-    body{margin:0; background:linear-gradient(180deg,#0a0f1f 0%, #0f1630 100%); color:var(--fg);
-         font-family:Pretendard, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial; padding:20px}
+    body{margin:0; background:var(--bg); color:var(--fg);
+         font-family:Pretendard, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial; padding:20px;
+         transition:background 0.3s, color 0.3s}
+    [data-theme="dark"] body{background:linear-gradient(180deg,#0a0f1f 0%, #0f1630 100%)}
+    [data-theme="light"] body{background:linear-gradient(180deg,#f0f4f8 0%, #e6ecf2 100%)}
     .container{max-width:1200px; margin:0 auto}
     h1{font-size:28px; margin-bottom:24px}
     .stats-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px}
@@ -46,21 +53,26 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
     button{background:var(--brand); color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer}
     button:hover{filter:brightness(1.1)}
     .preview{max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:13px}
+    .theme-toggle{position:fixed; top:20px; right:20px; background:var(--bg-card); border:1px solid var(--outline);
+                  padding:10px 16px; border-radius:8px; cursor:pointer; z-index:100; font-size:20px}
+    .theme-toggle:hover{filter:brightness(1.1)}
   </style>
 </head>
 <body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="테마 전환">🌙</button>
+  
   <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
       <h1 style="margin:0">📊 Verio 관리자 대시보드</h1>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
         <button onclick="filterByPeriod('today')" id="btn-today" style="padding:8px 16px; background:var(--brand); border:none; color:white; border-radius:6px; cursor:pointer">오늘</button>
-        <button onclick="filterByPeriod('week')" id="btn-week" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 주</button>
-        <button onclick="filterByPeriod('month')" id="btn-month" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 달</button>
-        <button onclick="filterByPeriod('all')" id="btn-all" style="padding:8px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">전체</button>
+        <button onclick="filterByPeriod('week')" id="btn-week" style="padding:8px 16px; background:var(--bg-card); border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 주</button>
+        <button onclick="filterByPeriod('month')" id="btn-month" style="padding:8px 16px; background:var(--bg-card); border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">이번 달</button>
+        <button onclick="filterByPeriod('all')" id="btn-all" style="padding:8px 16px; background:var(--bg-card); border:1px solid var(--outline); color:var(--fg); border-radius:6px; cursor:pointer">전체</button>
         <span style="color:var(--muted); margin:0 8px">|</span>
-        <input type="date" id="date-from" style="padding:8px; background:#0f1730; color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
+        <input type="date" id="date-from" style="padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
         <span style="color:var(--muted)">~</span>
-        <input type="date" id="date-to" style="padding:8px; background:#0f1730; color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
+        <input type="date" id="date-to" style="padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--outline); border-radius:6px; font-size:13px"/>
         <button onclick="filterByCustomDate()" style="padding:8px 16px; background:#7b6cff; border:none; color:white; border-radius:6px; cursor:pointer">적용</button>
       </div>
     </div>
@@ -86,8 +98,12 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
 
     <div class="card">
       <h3 style="margin-top:0">별점별 분포</h3>
-      <canvas id="chart" style="max-height:200px"></canvas>
-      <div id="rating-bars" style="margin-top:16px"></div>
+      <canvas id="chart" style="max-height:250px"></canvas>
+    </div>
+    
+    <div class="card">
+      <h3 style="margin-top:0">일별 분석 추이 (최근 7일)</h3>
+      <canvas id="trend-chart" style="max-height:200px"></canvas>
     </div>
 
     <div class="card">
@@ -149,7 +165,7 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
           btn.style.background = 'var(--brand)';
           btn.style.border = 'none';
         } else {
-          btn.style.background = '#1a2442';
+          btn.style.background = 'var(--bg-card)';
           btn.style.border = '1px solid var(--outline)';
         }
       });
@@ -173,7 +189,7 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       // Reset all preset buttons
       ['today', 'week', 'month', 'all'].forEach(p => {
         const btn = document.getElementById('btn-' + p);
-        btn.style.background = '#1a2442';
+        btn.style.background = 'var(--bg-card)';
         btn.style.border = '1px solid var(--outline)';
       });
       
@@ -235,19 +251,58 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       
       const accuracy = data.accuracy != null ? data.accuracy.toFixed(1) + '%' : '-';
       document.getElementById('accuracy').textContent = accuracy;
+
+      // Rating distribution chart
+      const ctx = document.getElementById('chart');
+      if (window.ratingChart) window.ratingChart.destroy();
+      window.ratingChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['⭐1점', '⭐⭐2점', '⭐⭐⭐3점', '⭐⭐⭐⭐4점', '⭐⭐⭐⭐⭐5점'],
+          datasets: [{
+            data: [byRating[1], byRating[2], byRating[3], byRating[4], byRating[5]],
+            backgroundColor: ['#ff9b9b', '#ffd966', '#6aa6ff', '#73d49b', '#a0e0b0']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {color: '#e6edf3'}
+            }
+          }
+        }
+      });
       
-      // Rating bars
-      const bars = Object.entries(byRating).sort((a,b)=>b[0]-a[0]).map(([rating, count]) => {
-        const pct = totalRatings > 0 ? (count / totalRatings * 100).toFixed(0) : 0;
-        return `<div style="margin-bottom:8px">
-          <span style="display:inline-block; width:60px">⭐${rating}점</span>
-          <div style="display:inline-block; width:200px; height:20px; background:#0f1730; border-radius:4px; overflow:hidden; vertical-align:middle">
-            <div style="width:${pct}%; height:100%; background:var(--brand)"></div>
-          </div>
-          <span style="margin-left:8px">${count}개 (${pct}%)</span>
-        </div>`;
-      }).join('');
-      document.getElementById('rating-bars').innerHTML = bars;
+      // Trend chart (last 7 days)
+      const trendData = calculateTrend(filteredFeedbacks);
+      const trendCtx = document.getElementById('trend-chart');
+      if (window.trendChart) window.trendChart.destroy();
+      window.trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: trendData.labels,
+          datasets: [{
+            label: '분석 건수',
+            data: trendData.counts,
+            borderColor: '#6aa6ff',
+            backgroundColor: 'rgba(106,166,255,0.1)',
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {labels: {color: '#e6edf3'}}
+          },
+          scales: {
+            x: {ticks: {color: '#9fb0d0'}, grid: {color: '#223055'}},
+            y: {ticks: {color: '#9fb0d0'}, grid: {color: '#223055'}, beginAtZero: true}
+          }
+        }
+      });
       
       // Low rating cases table (filter <= 2 stars)
       const cases = filteredCases.filter(c => c.rating <= 2);
@@ -308,6 +363,44 @@ def admin_dashboard(authorization: str | None = Header(default=None)):
       await handleAction(currentCase.feedback_id, action);
       closeDetail();
     }
+    
+    function calculateTrend(feedbacks) {
+      const labels = [];
+      const counts = [];
+      const now = new Date();
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        labels.push(date.toLocaleDateString('ko-KR', {month: 'short', day: 'numeric'}));
+        
+        const dayCount = feedbacks.filter(fb => {
+          const fbDate = new Date(fb.timestamp).toISOString().split('T')[0];
+          return fbDate === dateStr;
+        }).length;
+        counts.push(dayCount);
+      }
+      
+      return {labels, counts};
+    }
+    
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('admin_theme', newTheme);
+      document.querySelector('.theme-toggle').textContent = newTheme === 'light' ? '☀️' : '🌙';
+    }
+    
+    // Load theme on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('admin_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.querySelector('.theme-toggle').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+    });
     
     loadData();
     setInterval(loadData, 30000); // 30초마다 자동 새로고침

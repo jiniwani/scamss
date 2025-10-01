@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from .routers.analyze import router as analyze_router
 from .routers.ui import router as ui_router
@@ -24,6 +25,8 @@ app.add_middleware(
 def healthz():
     return {"status": "ok"}
 
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(analyze_router, prefix="/api/v1")
 app.include_router(feedback_router, prefix="/api/v1")

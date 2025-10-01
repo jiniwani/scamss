@@ -14,6 +14,8 @@ def home():
   <meta charset=utf-8>
   <meta name=viewport content="width=device-width, initial-scale=1">
   <title>Verio - AI 기반 대화 분석으로 로맨스 스캠 위험 탐지</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#6aa6ff">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -21,31 +23,38 @@ def home():
       --bg:#0b1020; --bg-card:#121a33; --fg:#e6edf3; --muted:#9fb0d0; --brand:#6aa6ff;
       --ok:#18a058; --warn:#c29b00; --danger:#c71f1f; --outline:#223055;
     }
+    [data-theme="light"]{
+      --bg:#f5f7fa; --bg-card:#ffffff; --fg:#1a202c; --muted:#64748b; --brand:#3b82f6;
+      --ok:#059669; --warn:#d97706; --danger:#dc2626; --outline:#e2e8f0;
+    }
     *{box-sizing:border-box}
-    body{margin:0; background:linear-gradient(180deg,#0a0f1f 0%, #0f1630 100%); color:var(--fg);
-         font-family:Pretendard, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial}
+    body{margin:0; background:var(--bg); color:var(--fg);
+         font-family:Pretendard, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial;
+         transition:background 0.3s, color 0.3s}
+    [data-theme="dark"] body{background:linear-gradient(180deg,#0a0f1f 0%, #0f1630 100%)}
+    [data-theme="light"] body{background:linear-gradient(180deg,#f0f4f8 0%, #e6ecf2 100%)}
     .container{max-width:980px; margin:40px auto; padding:0 20px}
     .header{display:flex; align-items:center; gap:12px; margin-bottom:20px}
-    .logo{width:42px;height:42px;border-radius:12px;background:#0b1020;
-          display:flex;align-items:center;justify-content:center}
+    .logo{width:42px;height:42px;border-radius:12px;background:var(--bg);
+          display:flex;align-items:center;justify-content:center;border:1px solid var(--outline)}
     .brand{display:flex; flex-direction:column; gap:2px}
     h1{margin:0; font-size:26px; font-weight:700}
     .tagline{font-size:13px; color:var(--muted)}
     .card{background:var(--bg-card); border:1px solid var(--outline); border-radius:14px; padding:24px;}
     .grid{display:grid; gap:16px}
     label.small{color:var(--muted); font-size:13px; font-weight:600}
-    textarea{width:100%; min-height:200px; resize:vertical; background:#0f1730; color:var(--fg);
-             border:1px solid var(--outline); border-radius:10px; padding:14px; font-size:14px; line-height:1.6}
-    input, select{background:#0f1730; color:var(--fg); border:1px solid var(--outline); border-radius:10px; padding:10px; font-size:14px}
+    textarea{width:100%; min-height:200px; resize:vertical; background:var(--bg); color:var(--fg);
+                 border:1px solid var(--outline); border-radius:10px; padding:14px; font-size:14px; line-height:1.6}
+    input, select{background:var(--bg); color:var(--fg); border:1px solid var(--outline); border-radius:10px; padding:10px; font-size:14px}
     .row2{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center}
     .switch{display:flex; gap:10px; align-items:center}
     button.primary{background:linear-gradient(135deg,#6aa6ff,#7b6cff); color:white; border:none;
                    padding:14px 24px; border-radius:10px; font-weight:700; cursor:pointer; font-size:15px}
     button.primary:hover{filter:brightness(1.1); transform:translateY(-1px)}
     button.primary:disabled{opacity:0.6; cursor:not-allowed; transform:none}
-    .star-btn{background:#0f1730; color:#ffd966; border:1px solid var(--outline); padding:8px 12px;
-              border-radius:8px; cursor:pointer; font-size:14px}
-    .star-btn:hover{background:#1a2442; border-color:var(--brand)}
+    .star-btn{background:var(--bg); color:#ffd966; border:1px solid var(--outline); padding:8px 12px;
+                  border-radius:8px; cursor:pointer; font-size:14px}
+    .star-btn:hover{background:var(--bg-card); border-color:var(--brand)}
     .result{margin-top:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
     .badge{display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; text-transform:uppercase}
     .low{background:rgba(24,160,88,.15); color:#73d49b}
@@ -62,9 +71,22 @@ def home():
     .value-prop h3{margin:0 0 10px 0; font-size:16px; color:var(--brand)}
     .value-prop ul{margin:6px 0 0 18px; padding:0; line-height:1.7}
     .value-prop li{margin-bottom:6px; color:var(--fg)}
+    .spinner{display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3);
+             border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .theme-toggle{position:fixed; top:20px; right:20px; background:var(--bg-card); border:1px solid var(--outline);
+                  padding:10px 16px; border-radius:8px; cursor:pointer; z-index:100; font-size:20px}
+    .theme-toggle:hover{filter:brightness(1.1)}
+    .history-panel{margin-top:20px; padding:16px; background:var(--bg-card); border:1px solid var(--outline); border-radius:10px}
+    .history-item{padding:10px; background:var(--bg); border-radius:6px; margin-bottom:8px; cursor:pointer;
+                  transition:all 0.2s; border:1px solid transparent}
+    .history-item:hover{border-color:var(--brand); transform:translateX(4px)}
+    .history-time{font-size:12px; color:var(--muted)}
   </style>
 </head>
 <body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="테마 전환">🌙</button>
+  
   <div class="container">
     <div class="header">
       <div class="logo">
@@ -136,7 +158,7 @@ def home():
       
       <div id=actions style="display:none; margin-top:16px; display:flex; gap:10px">
         <button onclick="shareResult()" style="padding:10px 16px; background:var(--brand); border:none; color:white; border-radius:8px; cursor:pointer">결과 공유</button>
-        <button onclick="downloadResult()" style="padding:10px 16px; background:#1a2442; border:1px solid var(--outline); color:var(--fg); border-radius:8px; cursor:pointer">결과 다운로드</button>
+        <button onclick="downloadResult()" style="padding:10px 16px; background:var(--bg-card); border:1px solid var(--outline); color:var(--fg); border-radius:8px; cursor:pointer">결과 다운로드</button>
       </div>
       
       <div id=feedback style="display:none; margin-top:16px; padding:16px; background:rgba(106,166,255,.08); border-radius:10px">
@@ -162,6 +184,13 @@ def home():
           <li><b>출력 결과</b>: 위험도 배지(낮음/중간/높음)와 스캠 확률(%) 확인 후 권장 조치 확인</li>
           <li><b>대상</b>: 데이팅앱 메시지·SNS 쪽지 환경에서 실시간 위험 분석과 근거 제시, 대응 문구 추천 제공</li>
         </ul>
+      </div>
+    </div>
+    
+    <div class="card" style="margin-top:20px">
+      <h3 style="margin:0 0 16px 0">📜 최근 분석 기록 (최대 5개)</h3>
+      <div id="history-container">
+        <div style="color:var(--muted); text-align:center; padding:20px">아직 분석 기록이 없습니다</div>
       </div>
     </div>
   </div>
@@ -202,7 +231,8 @@ def home():
       const mask = document.getElementById('mask').checked;
       const mode = document.getElementById('mode').value;
       if (!text) { alert('대화 내용을 입력하세요'); return; }
-      btn.disabled = true; btn.textContent = '분석 중...';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> 분석 중...';
       sum.innerHTML = ''; out.style.display = 'none'; feedbackDiv.style.display = 'none';
       lastInputText = text;
       try {
@@ -257,6 +287,10 @@ def home():
         // Show action buttons
         document.getElementById('actions').style.display = 'flex';
         
+        // Save to history
+        saveToHistory(data, text);
+        loadHistory();
+        
         out.style.display = 'none';
         feedbackDiv.style.display = 'block';
       } catch (e) {
@@ -292,12 +326,14 @@ def home():
           });
           feedbackDiv.innerHTML = '<div style="color:#73d49b; font-weight:600">✅ 피드백이 저장되었습니다. 감사합니다!</div>';
         } catch (e) {
-          alert('피드백 전송 중 오류가 발생했습니다.');
-        }
-      };
-    });
-    
-    // Copy safe reply to clipboard
+            alert('피드백 전송 중 오류가 발생했습니다.');
+          } finally {
+            btn.disabled = false; btn.textContent = '분석 시작';
+          }
+        };
+      });
+      
+      // Copy safe reply to clipboard
     function copyReply() {
       const text = document.getElementById('reply-text').textContent;
       navigator.clipboard.writeText(text).then(() => {
@@ -321,46 +357,187 @@ def home():
       const tierKo = {low:'낮음',medium:'중간',high:'높음'}[data.risk_tier] || data.risk_tier;
       const percent = Math.round((data.score ?? 0) * 100);
       const priorityKo = {monitor: '모니터링', warn: '경고', block: '차단'}[data.recommended_action?.priority] || '-';
+      const categoryKo = {financial: '금전', relationship: '관계', identity: '신원', behavioral: '행동'};
+      const severityKo = {severe: '심각', moderate: '보통', mild: '경미'};
       
-      let report = `Verio 로맨스 스캠 분석 결과
-${'='.repeat(50)}
+      let report = `╔═══════════════════════════════════════════════════╗
+║           Verio 로맨스 스캠 분석 결과            ║
+╚═══════════════════════════════════════════════════╝
 
-분석 일시: ${new Date().toLocaleString('ko-KR')}
-위험도: ${tierKo}
-스캠 확률: ${percent}%
-신뢰도: ${Math.round((data.confidence ?? 0) * 100)}%
-권장 조치: ${priorityKo}
+📅 분석 일시: ${new Date().toLocaleString('ko-KR', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 종합 평가
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 위험도 등급: ${tierKo.toUpperCase()}
+📈 스캠 가능성: ${percent}%
+💯 신뢰도: ${Math.round((data.confidence ?? 0) * 100)}%
+⚠️ 권장 조치: ${priorityKo}
 
 ${data.recommended_action?.user_guidance || ''}
 
-${'='.repeat(50)}
-탐지된 위험 요소 (${data.red_flags?.length || 0}개)
-${'='.repeat(50)}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 탐지된 위험 신호 (총 ${data.red_flags?.length || 0}개)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 `;
       
       (data.red_flags || []).forEach((flag, i) => {
-        report += `${i+1}. ${flag.type_ko || flag.description} (${flag.category}, ${flag.severity})\n`;
+        const cat = categoryKo[flag.category] || flag.category;
+        const sev = severityKo[flag.severity] || flag.severity;
+        report += `${i+1}. ${flag.type_ko || flag.description}\n`;
+        report += `   └─ 분류: ${cat} | 심각도: ${sev}\n\n`;
       });
       
-      report += `\n${'='.repeat(50)}\n안전 수칙\n${'='.repeat(50)}\n\n`;
+      if (data.evidence_spans && data.evidence_spans.length > 0) {
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 구체적 증거 문장
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+        data.evidence_spans.slice(0, 5).forEach((ev, i) => {
+          const flagName = data.red_flags.find(f => f.type === ev.flag_type)?.type_ko || ev.flag_type;
+          report += `${i+1}. [${flagName}]\n`;
+          report += `   "${ev.text}"\n`;
+          report += `   - 발신자: ${ev.sender} | 메시지 순서: ${ev.turn + 1}번째\n\n`;
+        });
+      }
+      
+      report += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️ 안전 수칙
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
       (data.recommended_action?.safe_practices || []).forEach((practice, i) => {
-        report += `${i+1}. ${practice}\n`;
+        report += `✓ ${practice}\n`;
       });
       
       if (data.safe_reply_template) {
-        report += `\n${'='.repeat(50)}\n안전한 응답 예시\n${'='.repeat(50)}\n\n${data.safe_reply_template}\n`;
+        report += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💬 안전한 응답 예시
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"${data.safe_reply_template}"
+`;
       }
       
-      report += `\n\n${'='.repeat(50)}\n생성: Verio (https://github.com/jiniwani/scamss)\n${'='.repeat(50)}`;
+      report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 추가 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+본 분석은 Verio AI 시스템을 통해 자동 생성되었습니다.
+로맨스 스캠이 의심되는 경우 경찰청 사이버범죄 신고센터(112, 182)에
+즉시 신고하시기 바랍니다.
+
+생성: Verio AI (https://github.com/jiniwani/scamss)
+`;
       
       const blob = new Blob([report], { type: 'text/plain; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Verio_스캠분석_${new Date().toISOString().split('T')[0]}.txt`;
+      a.download = `Verio_스캠분석결과_${new Date().toISOString().split('T')[0]}.txt`;
       a.click();
       URL.revokeObjectURL(url);
+    }
+    
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      document.querySelector('.theme-toggle').textContent = newTheme === 'light' ? '☀️' : '🌙';
+    }
+    
+    // Load theme on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.querySelector('.theme-toggle').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+      loadHistory();
+      
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/service-worker.js').catch(e => console.log('SW registration failed'));
+      }
+    });
+    
+    // Analysis history management
+    function saveToHistory(result, text) {
+      let history = JSON.parse(localStorage.getItem('analysis_history') || '[]');
+      history.unshift({
+        timestamp: new Date().toISOString(),
+        tier: result.risk_tier,
+        score: result.score,
+        text_preview: text.substring(0, 50),
+        full_result: result,
+        full_text: text
+      });
+      history = history.slice(0, 5); // Keep last 5
+      localStorage.setItem('analysis_history', JSON.stringify(history));
+    }
+    
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('analysis_history') || '[]');
+      const container = document.getElementById('history-container');
+      if (!container) return;
+      
+      if (history.length === 0) {
+        container.innerHTML = '<div style="color:var(--muted); text-align:center; padding:20px">아직 분석 기록이 없습니다</div>';
+        return;
+      }
+      
+      container.innerHTML = history.map((item, idx) => {
+        const tierKo = {low:'낮음',medium:'중간',high:'높음'}[item.tier] || item.tier;
+        const cls = item.tier==='high'?'high':(item.tier==='medium'?'medium':'low');
+        const percent = Math.round((item.score ?? 0) * 100);
+        const time = new Date(item.timestamp).toLocaleString('ko-KR', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+        return `
+        <div class="history-item" onclick='loadFromHistory(${idx})'>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+            <span class="badge ${cls}" style="font-size:11px">${tierKo}</span>
+            <span style="color:var(--brand); font-weight:600">${percent}%</span>
+          </div>
+          <div style="font-size:13px; color:var(--fg); margin-bottom:4px">${item.text_preview}...</div>
+          <div class="history-time">${time}</div>
+        </div>
+        `;
+      }).join('');
+    }
+    
+    function loadFromHistory(index) {
+      const history = JSON.parse(localStorage.getItem('analysis_history') || '[]');
+      const item = history[index];
+      if (!item) return;
+      
+      document.getElementById('txt').value = item.full_text;
+      lastAnalysisResult = item.full_result;
+      lastInputText = item.full_text;
+      
+      // Trigger display update
+      const data = item.full_result;
+      const tier = data.risk_tier.toLowerCase();
+      const score = data.score ?? 0;
+      const percent = Math.round(score * 100);
+      const cls = tier==='high'?'high':(tier==='medium'?'medium':'low');
+      const tierKo = tier==='high'?'높음':(tier==='medium'?'중간':'낮음');
+      const priorityKo = {monitor: '모니터링', warn: '경고', block: '차단'}[data.recommended_action?.priority] || '-';
+      
+      sum.innerHTML = `
+        <span class="badge ${cls}">${tierKo}</span>
+        <span class=percent>${percent}%</span>
+        <span class=muted>권장 조치: ${priorityKo}</span>
+      `;
+      
+      feedbackDiv.style.display = 'block';
+      document.getElementById('actions').style.display = 'flex';
+      
+      window.scrollTo({top: 0, behavior: 'smooth'});
     }
   </script>
 </body>
