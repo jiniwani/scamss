@@ -177,13 +177,24 @@ def home():
     // Auto re-analysis on text change
     document.getElementById('txt').addEventListener('input', () => {
       const text = document.getElementById('txt').value.trim();
+      clearTimeout(reanalyzeTimer);
+      
       if (text && text !== lastInputText && lastInputText) {
         btn.textContent = '변경 감지...';
-        clearTimeout(reanalyzeTimer);
+        btn.style.opacity = '0.8';
+        
         reanalyzeTimer = setTimeout(() => {
-          if (confirm('대화가 변경되었습니다. 다시 분석할까요?')) btn.click();
-          else btn.textContent = '분석 시작';
+          if (confirm('대화가 변경되었습니다. 다시 분석할까요?')) {
+            btn.click();
+          } else {
+            btn.textContent = '분석 시작';
+            btn.style.opacity = '1';
+          }
         }, 2000);
+      } else if (!text || text === lastInputText) {
+        // Text cleared or same as last
+        btn.textContent = '분석 시작';
+        btn.style.opacity = '1';
       }
     });
     
