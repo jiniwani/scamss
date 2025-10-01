@@ -153,6 +153,20 @@ def home():
     const feedbackDiv = document.getElementById('feedback');
     let lastAnalysisResult = null;
     let lastInputText = '';
+    let reanalyzeTimer = null;
+    
+    // Auto re-analysis on text change
+    document.getElementById('txt').addEventListener('input', () => {
+      const text = document.getElementById('txt').value.trim();
+      if (text && text !== lastInputText && lastInputText) {
+        btn.textContent = '변경 감지...';
+        clearTimeout(reanalyzeTimer);
+        reanalyzeTimer = setTimeout(() => {
+          if (confirm('대화가 변경되었습니다. 다시 분석할까요?')) btn.click();
+          else btn.textContent = '분석 시작';
+        }, 2000);
+      }
+    });
     
     btn.onclick = async () => {
       const text = document.getElementById('txt').value.trim();
