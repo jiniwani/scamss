@@ -11,6 +11,8 @@ from ..services.context_analyzer import analyze_conversation_context, calculate_
 from ..services.entity_validator import detect_inconsistencies, calculate_entity_risk_boost
 from ..services.sentiment_analyzer import analyze_emotional_manipulation, calculate_emotional_risk_boost
 from ..services.money_pattern_analyzer import analyze_money_patterns, calculate_money_pattern_risk_boost
+from ..services.sequence_analyzer import detect_scam_sequence, calculate_sequence_risk_boost
+from ..services.style_analyzer import analyze_language_style, calculate_style_risk_boost
 from ..utils.pii import mask_pii
 
 router = APIRouter()
@@ -109,6 +111,14 @@ def analyze(body: AnalyzeRequest):
     # Analyze money amount patterns
     money_analysis = analyze_money_patterns(body.messages)
     money_boost = calculate_money_pattern_risk_boost(money_analysis)
+    
+    # Detect scam sequence pattern
+    sequence_analysis = detect_scam_sequence(body.messages)
+    sequence_boost = calculate_sequence_risk_boost(sequence_analysis)
+    
+    # Analyze language style
+    style_analysis = analyze_language_style(body.messages)
+    style_boost = calculate_style_risk_boost(style_analysis)
 
     conversation_context = {
         'message_count': len(msgs),
@@ -118,8 +128,9 @@ def analyze(body: AnalyzeRequest):
     }
     base_score = calculate_risk_score(detected, conversation_context)
     
-    # Apply all boosts (context, entity, sentiment, money patterns)
-    total_boost = context_boost + entity_boost + sentiment_boost + money_boost
+    # Apply all boosts (context, entity, sentiment, money, sequence, style)
+    total_boost = (context_boost + entity_boost + sentiment_boost + 
+                   money_boost + sequence_boost + style_boost)
     score = min(1.0, base_score + total_boost)
 
     # Build red_flags list
