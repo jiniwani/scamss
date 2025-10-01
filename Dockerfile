@@ -23,5 +23,5 @@ urllib.request.urlopen(req); print('ok')" || exit 1
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "30", "src.app.main:app"]
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]
 
