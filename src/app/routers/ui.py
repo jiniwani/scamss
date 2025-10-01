@@ -26,8 +26,8 @@ def home():
          font-family:Pretendard, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial}
     .container{max-width:980px; margin:40px auto; padding:0 20px}
     .header{display:flex; align-items:center; gap:12px; margin-bottom:20px}
-    .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6aa6ff,#7b6cff);
-          display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white}
+    .logo{width:42px;height:42px;border-radius:12px;background:#0b1020;
+          display:flex;align-items:center;justify-content:center}
     .brand{display:flex; flex-direction:column; gap:2px}
     h1{margin:0; font-size:26px; font-weight:700}
     .tagline{font-size:13px; color:var(--muted)}
@@ -67,7 +67,26 @@ def home():
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">V</div>
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="42" height="42">
+          <path d="M 70 100 Q 60 70, 80 50 Q 90 40, 95 60 Q 98 80, 85 95 Q 75 105, 70 100" 
+                fill="url(#orangeGrad)" stroke="#d97706" stroke-width="2"/>
+          <path d="M 130 100 Q 140 70, 120 50 Q 110 40, 105 60 Q 102 80, 115 95 Q 125 105, 130 100" 
+                fill="url(#greenGrad)" stroke="#16a34a" stroke-width="2"/>
+          <line x1="85" y1="60" x2="80" y2="90" stroke="#e97706" stroke-width="1" opacity="0.6"/>
+          <line x1="115" y1="60" x2="120" y2="90" stroke="#22c55e" stroke-width="1" opacity="0.6"/>
+          <defs>
+            <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#fb923c;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
       <div class="brand">
         <h1>Verio</h1>
         <div class="tagline">AI 기반 대화 분석으로 로맨스 스캠 위험 탐지</div>
