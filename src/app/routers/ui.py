@@ -75,11 +75,11 @@ def home():
     </div>
 
     <div class="value-prop">
-      <h3>✅ 제공 서비스 핵심 기능</h3>
+      <h3>✅ 핵심 기능</h3>
       <ul>
-        <li><b>실시간 위험도 분석</b>: AI 기반 대화 분석으로 로맨스 스캠 위험 패턴 탐지 (낮음·중간·높음)</li>
-        <li><b>경쟁 제품과 차별화</b>: 단순 차단이 아닌 <b>**설명 가능한 탐지**(XAI)</b>로 다양한 배경 근거 제공</li>
-        <li><b>트렌드 키워드</b>: AI 분석, 온라인 안전, 프라이버시 보호, 디지털 위험 예방, 사이버 범죄 해결</li>
+        <li><b>실시간 위험도 분석</b>: 인공지능 기반 대화 분석으로 로맨스 스캠 위험 패턴 탐지 (낮음·중간·높음)</li>
+        <li><b>차별화</b>: 단순 차단이 아닌 <b>설명 가능한 탐지</b>로 구체적인 근거 제공</li>
+        <li><b>키워드</b>: 인공지능 분석, 온라인 안전, 개인정보 보호, 디지털 위험 예방, 사이버 범죄 해결</li>
       </ul>
     </div>
 
@@ -91,25 +91,25 @@ def home():
 
       <div class=row2>
         <div class=switch>
-          <label><input type=checkbox id=mask checked> PII 마스킹</label>
+          <label><input type=checkbox id=mask checked> 개인정보 마스킹</label>
           <select id=mode>
-            <option value="realtime" selected>빠른 분석(Flash)</option>
-            <option value="detailed">상세 분석(Pro)</option>
+            <option value="realtime" selected>빠른 분석</option>
+            <option value="detailed">상세 분석</option>
           </select>
         </div>
-        <input id=apikey type=password placeholder="API 키 (선택)" style="min-width:180px"/>
+        <input id=apikey type=password placeholder="제미나이 키 (선택)" style="min-width:180px"/>
         <button id=btn class=primary>분석 시작</button>
       </div>
 
       <div class=result id=summary></div>
       <div id=feedback style="display:none; margin-top:16px; padding:16px; background:rgba(106,166,255,.08); border-radius:10px">
         <div style="margin-bottom:10px; font-weight:600">이 분석 결과가 도움이 되셨나요?</div>
-        <div style="display:flex; gap:8px; margin-bottom:10px">
-          <button class="star-btn" data-rating="1">⭐</button>
-          <button class="star-btn" data-rating="2">⭐⭐</button>
-          <button class="star-btn" data-rating="3">⭐⭐⭐</button>
-          <button class="star-btn" data-rating="4">⭐⭐⭐⭐</button>
-          <button class="star-btn" data-rating="5">⭐⭐⭐⭐⭐</button>
+        <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap">
+          <button class="star-btn" data-rating="1">⭐ 전혀 아님</button>
+          <button class="star-btn" data-rating="2">⭐⭐ 부족함</button>
+          <button class="star-btn" data-rating="3">⭐⭐⭐ 보통</button>
+          <button class="star-btn" data-rating="4">⭐⭐⭐⭐ 좋음</button>
+          <button class="star-btn" data-rating="5">⭐⭐⭐⭐⭐ 매우 좋음</button>
         </div>
         <textarea id="feedback-comment" placeholder="의견을 남겨주세요 (선택)" style="width:100%; min-height:60px; margin-bottom:8px"></textarea>
         <div style="font-size:12px; color:var(--muted)">낮은 별점의 경우 대화 내용이 익명으로 저장되어 개선에 활용됩니다.</div>
@@ -119,11 +119,11 @@ def home():
       <div class="foot">
         <strong>📖 사용 가이드</strong>
         <ul>
-          <li><b>PII 마스킹</b>: 전화/이메일/카드 등 개인정보를 [PHONE]/[EMAIL]처럼 자동 가려 전송 (SNS 개인정보 보호)</li>
-          <li><b>분석 모드</b>: 빠른 분석(Flash)은 속도 우선, 상세 분석(Pro)은 정확도·설명 우선</li>
-          <li><b>API 키</b>: Gemini 키 입력 시 모델 기반 정밀 분석 실행. 비우면 규칙 기반 간편 분석</li>
-          <li><b>출력</b>: 배지(LOW/MEDIUM/HIGH)와 스캠 확률(%) 확인 후 권장 조치 확인</li>
-          <li><b>대상 문구 예시</b>: "데이팅앱 메시지·SNS DM 환경에서 실시간 위험 분석과 근거 제시, 대응 문구 추천을 제공합니다"</li>
+          <li><b>개인정보 마스킹</b>: 전화/이메일/카드 등 개인정보를 [전화]/[이메일]처럼 자동 가려 전송 (개인정보 보호)</li>
+          <li><b>분석 모드</b>: 빠른 분석은 속도 우선, 상세 분석은 정확도·설명 우선</li>
+          <li><b>제미나이 키</b>: 키 입력 시 인공지능 모델 기반 정밀 분석 실행. 비우면 규칙 기반 간편 분석</li>
+          <li><b>출력 결과</b>: 위험도 배지(낮음/중간/높음)와 스캠 확률(%) 확인 후 권장 조치 확인</li>
+          <li><b>대상</b>: 데이팅앱 메시지·SNS 쪽지 환경에서 실시간 위험 분석과 근거 제시, 대응 문구 추천 제공</li>
         </ul>
       </div>
     </div>
@@ -159,10 +159,12 @@ def home():
         const score = (data.score ?? 0);
         const percent = Math.round(score * 100);
         const cls = tier==='high'?'high':(tier==='medium'?'medium':'low');
+        const tierKo = tier==='high'?'높음':(tier==='medium'?'중간':'낮음');
+        const priorityKo = {monitor: '모니터링', warn: '경고', block: '차단'}[data.recommended_action?.priority] || '-';
         sum.innerHTML = `
-          <span class="badge ${cls}">${tier.toUpperCase()}</span>
+          <span class="badge ${cls}">${tierKo}</span>
           <span class=percent>${percent}%</span>
-          <span class=muted>권장 조치: ${data.recommended_action?.priority || '-'}</span>
+          <span class=muted>권장 조치: ${priorityKo}</span>
         `;
         out.style.display = 'none';
         feedbackDiv.style.display = 'block';
