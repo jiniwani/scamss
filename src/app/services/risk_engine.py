@@ -30,24 +30,30 @@ RED_FLAG_PATTERNS = {
             'weight': 0.35
         },
         'guaranteed_profit_daily': {
-            'keywords': ['guaranteed', 'profit daily', '12% profit', 'guaranteed profit'],
+            'keywords': [
+                'guaranteed', 'profit daily', '12% profit', 'guaranteed profit', 'no risk', 'risk-free',
+                '무위험', '확실한 수익', '100% 수익', 'guaranteed return'
+            ],
             'weight': 0.35
         },
         'minimum_deposit': {
-            'regex': r'start\s+with\s*\$?\d+',
-            'weight': 0.25
+            'regex': r'(start|begin|minimum|min)\s+(with|deposit|amount)?\s*\$?\d+',
+            'weight': 0.3
         },
         'registration_fee': {
-            'keywords': ['registration fee', 'sign-up fee', 'signup fee'],
+            'keywords': [
+                'registration fee', 'sign-up fee', 'signup fee', 'joining fee', 'membership fee',
+                '등록비', '가입비', '회원비'
+            ],
             'weight': 0.35
         },
         'activation_fee': {
-            'keywords': ['activation fee', 'activate your account'],
+            'keywords': ['activation fee', 'activate your account', 'account activation', '활성화 비용'],
             'weight': 0.3
         },
         'earn_per_day': {
-            'regex': r'earn\s*\$?\d+\s*/\s*day',
-            'weight': 0.3
+            'regex': r'(earn|make|get)\s*\$?\d+\s*[/-]\s*(day|daily|per day)',
+            'weight': 0.35
         },
         'fees_documents': {
             'keywords': ['customs fee', 'visa fee', 'lawyer fee', 'processing fee', 'clearance', '수수료', '비용', '관세', '서류비'],
@@ -152,12 +158,34 @@ def calculate_risk_score(detected_flags: Dict, conversation_context: Dict) -> fl
             frequency = details['count']
             base_score += weight * min(frequency / 3, 1.0)
 
+    # Context multipliers
     if conversation_context.get('message_count', 0) < 10:
         if 'relationship' in detected_flags and 'love_bombing' in detected_flags['relationship']:
             base_score *= 1.3
 
     if conversation_context.get('financial_flags_count', 0) > 2:
         base_score *= 1.4
+
+    # Complex combo boosters
+    types = set()
+    for cat_flags in detected_flags.values():
+        types.update(cat_flags.keys())
+
+    # Boost 1: Money + urgency + untraceable method
+    if (types & {'direct_money_request', 'gift_card_request', 'crypto_wallet'}) and ('time_pressure' in types):
+        base_score += 0.25
+
+    # Boost 2: Investment fraud combo (guaranteed return + deposit instruction + obedience)
+    if (types & {'guaranteed_profit_daily', 'investment_scheme'}) and (types & {'exchange_deposit', 'minimum_deposit'}) and ('follow_orders' in types):
+        base_score += 0.3
+
+    # Boost 3: Employment scam (earn high + upfront fee + deadline)
+    if ('earn_per_day' in types) and (types & {'registration_fee', 'activation_fee'}) and ('time_pressure' in types):
+        base_score += 0.28
+
+    # Boost 4: Identity theft setup (document request + upfront payment)
+    if ('document_request' in types) and (types & {'registration_fee', 'activation_fee', 'fees_documents'}):
+        base_score += 0.2
 
     return min(max(base_score, 0.0), 1.0)
 
@@ -181,26 +209,49 @@ def determine_risk_tier(score: float, red_flags_list: List[Dict]) -> Dict:
         if not has_financial_flag and score < 0.85:
             base_tier = 'medium'
 
-    # Escalate for investment-style scams that instruct deposit and following orders
+    # Tier escalation based on pattern combos
     types = {f.get('type') for f in red_flags_list}
+    categories = {f.get('category') for f in red_flags_list}
+
+    # Rule 1: Investment fraud pattern (deposit + obedience)
     if {'investment_scheme'} & types and (types & {'exchange_deposit', 'follow_orders'}):
         if base_tier == 'low':
             base_tier = 'medium'
         elif base_tier == 'medium':
             base_tier = 'high'
 
-    # Escalate when multiple distinct categories present
-    categories = {f.get('category') for f in red_flags_list}
-    if len(categories) >= 3 and score >= 0.45:
+    # Rule 2: Multiple categories = cross-cutting manipulation
+    if len(categories) >= 3 and score >= 0.4:
         base_tier = 'high'
+    elif len(categories) >= 2 and score >= 0.5:
+        if base_tier == 'low':
+            base_tier = 'medium'
 
-    # Strong combo rule: upfront fee + time pressure => at least medium
+    # Rule 3: Upfront fee + time pressure (job/investment scam)
     if (types & {'registration_fee', 'activation_fee', 'minimum_deposit'}) and ('time_pressure' in types):
         if base_tier == 'low':
             base_tier = 'medium'
-    # Very strong combo: guaranteed/earn per day + upfront fee + document request => high
-    if (types & {'guaranteed_profit_daily', 'earn_per_day'}) and (types & {'registration_fee', 'activation_fee', 'minimum_deposit'}) and ('document_request' in types):
-        base_tier = 'high'
+
+    # Rule 4: Money + urgency + untraceable method = classic scam
+    if (types & {'direct_money_request', 'gift_card_request', 'crypto_wallet'}) and ('time_pressure' in types):
+        if score >= 0.5:
+            base_tier = 'high'
+        elif base_tier == 'low':
+            base_tier = 'medium'
+
+    # Rule 5: Guaranteed profit + upfront fee + document = compound fraud
+    if (types & {'guaranteed_profit_daily', 'earn_per_day'}) and (types & {'registration_fee', 'activation_fee', 'minimum_deposit'}):
+        if ('document_request' in types):
+            base_tier = 'high'
+        elif base_tier == 'low':
+            base_tier = 'medium'
+
+    # Rule 6: Any severe financial flag + behavioral manipulation = high concern
+    severe_financial = [f for f in red_flags_list if f.get('category') == 'financial' and f.get('severity') == 'severe']
+    behavioral_present = any(f.get('category') == 'behavioral' for f in red_flags_list)
+    if len(severe_financial) >= 1 and behavioral_present and score >= 0.5:
+        if base_tier == 'medium':
+            base_tier = 'high'
 
     return {
         'tier': base_tier,
